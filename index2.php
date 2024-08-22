@@ -1,8 +1,8 @@
 <?php
 ini_set('session.name', 'SIPROSES');
 session_start();
-$_SESSION['websocketChannel'] = 'weiuewiufwef';
-$_SESSION['websocketChannelTarget'] = 'weiuewiufweg';
+$_SESSION['websocketChannel'] = 'weiuewiufweg';
+$_SESSION['websocketChannelTarget'] = 'weiuewiufwef';
 ?>
 <html lang="en">
 <head>
@@ -14,7 +14,7 @@ $_SESSION['websocketChannelTarget'] = 'weiuewiufweg';
 <body>
     <h1>Video Call and Screen Share</h1>
     <div id="video-container">
-        <video id="localVideo" autoplay playsinline muted></video>
+        <video id="localVideo" autoplay playsinline></video>
         <video id="remoteVideo" autoplay playsinline></video>
     </div>
     <button id="openCamera">Open Camera</button>

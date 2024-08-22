@@ -9,11 +9,31 @@ use Ratchet\Server\IoServer;
 use Ratchet\Http\HttpServer;
 use Ratchet\WebSocket\WsServer;
 use Ratchet\Session\SessionProvider;
-use Symfony\Component\HttpFoundation\Session\Storage\Handler;
+use Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeFileSessionHandler;
 
 class Chat implements MessageComponentInterface {
+    
+    /**
+     * Session name
+     *
+     * @var string
+     */
     private $sessionName = 'PHPSESSID';
+    
+    /**
+     * Session save path
+     *
+     * @var string
+     */
+    private $sessionSavePath = null;
+    
+    /**
+     * Client list
+     *
+     * @var [type]
+     */
     protected $clients;
+    
 
     public function __construct() {
         $this->clients = [];
@@ -26,47 +46,36 @@ class Chat implements MessageComponentInterface {
      * @return void
      */
     public function onOpen(ConnectionInterface $conn) {
-        // Mengatur data sesi
-
-        // Mengakses parameter dari handshake
         $request = $conn->httpRequest;
                         
         if (isset($request)) {
-            
-            
             $cookies = $this->getCookies($request->getHeaders());
-            
             $sessions = $this->getSessions($cookies);
-            print_r($sessions);
-            
+            $websocketChannel = $sessions['websocketChannel'];
+            $conn->websocketChannel = $websocketChannel;
             $queryParams = $request->getUri()->getQuery();
             parse_str($queryParams, $params);
-            echo "Query Parameters: " . print_r($params, true) . "\n";
         }
 
-        // Menyimpan koneksi baru
         $this->clients[$conn->resourceId] = $conn;
-        echo "New connection! ({$conn->resourceId})\n";
     }
 
-    
-
     public function onMessage(ConnectionInterface $from, $msg) {
-        $data = json_decode($msg, true);
-        $targetId = $data['targetId'];
-        $message = $data['message'];
-
-        // Mengakses data sesi
-        $session = $from->Session;
-        $userId = $session->get('user_id');
-
-        echo "User ID: {$userId}\n";
-
-        // Mengirim pesan hanya ke penerima yang dituju
-        if (isset($this->clients[$targetId])) {
-            $this->clients[$targetId]->send($message);
-        } else {
-            $from->send("User not found: {$targetId}");
+        $data = json_decode($msg, true);       
+        $request = $from->httpRequest;                     
+        if (isset($request)) {
+            
+            $cookies = $this->getCookies($request->getHeaders());
+            $sessions = $this->getSessions($cookies);
+            print_r($sessions);
+            $websocketChannelTarget = $sessions['websocketChannelTarget'];         
+            foreach($this->clients as $client)
+            {
+                if($client->websocketChannel == $websocketChannelTarget)
+                {
+                    $client->send($msg);
+                }
+            }
         }
     }
 
@@ -74,6 +83,7 @@ class Chat implements MessageComponentInterface {
         // Menghapus koneksi yang terputus
         unset($this->clients[$conn->resourceId]);
         echo "Connection {$conn->resourceId} has disconnected\n";
+        echo "CHANNEL = ".$conn->websocketChannel."\r\n";
     }
 
     public function onError(ConnectionInterface $conn, \Exception $e) {
@@ -81,9 +91,8 @@ class Chat implements MessageComponentInterface {
         $conn->close();
     }
     
-    
     /**
-     * Parse cookies from headers
+     * Get cookies from headers
      *
      * @param array $headers
      * @return string[]
@@ -103,34 +112,29 @@ class Chat implements MessageComponentInterface {
                 break;
             }
         }
-        
         if(!empty($cookiesBuff))
         {
             $cookiesRaw = implode("; ", $cookiesBuff);
         }
-        
         if(isset($cookiesRaw))
         {
-
-            // Pisahkan cookie menjadi array
             $cookiesArray = explode('; ', $cookiesRaw);
-
-            // Inisialisasi array asosiatif untuk menyimpan cookie
             $parsedCookies = [];
-
             foreach ($cookiesArray as $cookie) {
-                // Pisahkan nama dan nilai cookie
                 list($name, $value) = explode('=', $cookie, 2);
-                // Tambahkan ke array asosiatif
                 $parsedCookies[$name] = $value;
             }
-
-            // Cetak array asosiatif
             return $parsedCookies;
         }
         return array();
     }
     
+    /**
+     * Get sessions from cookies
+     *
+     * @param array $cookies
+     * @return array
+     */
     public function getSessions($cookies)
     {
         $sessionName = $this->getSessionName();
@@ -145,6 +149,12 @@ class Chat implements MessageComponentInterface {
         return array();
     }
     
+    /**
+     * Deserialize session
+     *
+     * @param string $sessionData
+     * @return array
+     */
     public function parseSessionData($sessionData) {
         $returnData = [];
         $offset = 0;
@@ -162,7 +172,6 @@ class Chat implements MessageComponentInterface {
         }
         return $returnData;
     }
-    
 
     /**
      * Get the value of sessionName
@@ -177,7 +186,7 @@ class Chat implements MessageComponentInterface {
      * Set the value of sessionName
      *
      * @param string $sessionName
-     * @return  self
+     * @return self
      */ 
     public function setSessionName($sessionName)
     {
@@ -185,32 +194,50 @@ class Chat implements MessageComponentInterface {
 
         return $this;
     }
+
+    /**
+     * Get session save path
+     *
+     * @return string
+     */ 
+    public function getSessionSavePath()
+    {
+        return $this->sessionSavePath;
+    }
+
+    /**
+     * Set session save path
+     *
+     * @param  string  $sessionSavePath  Session save path
+     *
+     * @return self
+     */ 
+    public function setSessionSavePath(string $sessionSavePath)
+    {
+        $this->sessionSavePath = $sessionSavePath;
+
+        return $this;
+    }
 }
 
 $sessionSavePath = 'C:\\PortableApps\\usbwebserver\\php\\tmp';
-//ini_set('session.save_path', $sessionSavePath);
+$sessionName = 'SIPROSES';
+$port = 8080;
 
-$sessionHandler = new Handler\NativeFileSessionHandler($sessionSavePath);
-//session_start();
+$sessionHandler = new NativeFileSessionHandler($sessionSavePath);
+
 $chat = new Chat();
-$chat->setSessionName('SIPROSES');
+$chat->setSessionName($sessionName);
+$chat->setSessionSavePath($sessionSavePath);
 
 $session = new SessionProvider(
     new WsServer($chat),
-    $sessionHandler,
-    [
-        'auto_start' => true,
-        'cookie_lifetime' => 0,
-        'gc_maxlifetime' => 1440,
-        'cookie_secure' => false,
-        'cookie_httponly' => true,
-        'cookie_samesite' => 'Lax'
-    ]
+    $sessionHandler
 );
 
 $server = IoServer::factory(
     new HttpServer($session),
-    8080
+    $port
 );
 
 $server->run();
