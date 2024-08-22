@@ -59,10 +59,8 @@ class Chat implements MessageComponentInterface {
     public function onMessage(ConnectionInterface $from, $msg) {
         $request = $from->httpRequest;                     
         if (isset($request)) {
-            
             $cookies = $this->getCookies($request->getHeaders());
             $sessions = $this->getSessions($cookies);
-            print_r($sessions);
             $websocketChannelTarget = $sessions['websocketChannelTarget'];         
             foreach($this->clients as $client)
             {
@@ -77,12 +75,9 @@ class Chat implements MessageComponentInterface {
     public function onClose(ConnectionInterface $conn) {
         // Menghapus koneksi yang terputus
         unset($this->clients[$conn->resourceId]);
-        echo "Connection {$conn->resourceId} has disconnected\n";
-        echo "CHANNEL = ".$conn->websocketChannel."\r\n";
     }
 
-    public function onError(ConnectionInterface $conn, \Exception $e) {
-        echo "An error has occurred: {$e->getMessage()}\n";
+    public function onError(ConnectionInterface $conn, Exception $e) {
         $conn->close();
     }
     
