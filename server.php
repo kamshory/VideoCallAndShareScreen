@@ -2,7 +2,6 @@
 
 require_once __DIR__ . '/inc.lib//vendor/autoload.php';
 
-use Psr\Http\Message\RequestInterface;
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
 use Ratchet\Server\IoServer;
