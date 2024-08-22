@@ -1,4 +1,5 @@
 <?php
+//ini_set('session.name', 'SIPROSES');
 session_start()
 ?>
 <html lang="en">

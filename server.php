@@ -12,6 +12,7 @@ use Ratchet\Session\SessionProvider;
 use Symfony\Component\HttpFoundation\Session\Storage\Handler;
 
 class Chat implements MessageComponentInterface {
+    private $sessionName = 'PHPSESSID';
     protected $clients;
 
     public function __construct() {
@@ -25,18 +26,18 @@ class Chat implements MessageComponentInterface {
      * @return void
      */
     public function onOpen(ConnectionInterface $conn) {
-        
-        
         // Mengatur data sesi
-        
 
         // Mengakses parameter dari handshake
         $request = $conn->httpRequest;
-        
+                        
         if (isset($request)) {
             
             
             $cookies = $this->getCookies($request->getHeaders());
+            
+            $sessions = $this->getSessions($cookies);
+            print_r($sessions);
             
             $queryParams = $request->getUri()->getQuery();
             parse_str($queryParams, $params);
@@ -134,11 +135,14 @@ class Chat implements MessageComponentInterface {
     {
         $sessionName = $this->getSessionName();
         $sessionId = $cookies[$sessionName];
-        $sessionId = 'kafmoo0ib37r63stupsaqb05e4';
         $sessionSavePath = ini_get('session.save_path');
         $sessionFile = $sessionSavePath . '/sess_' . $sessionId;
-        $sessionData = file_get_contents($sessionFile);
-        return $this->parseSessionData($sessionData);
+        if(file_exists($sessionFile))
+        {
+            $sessionData = file_get_contents($sessionFile);
+            return $this->parseSessionData($sessionData);
+        }
+        return array();
     }
     
     public function parseSessionData($sessionData) {
@@ -158,7 +162,7 @@ class Chat implements MessageComponentInterface {
         }
         return $returnData;
     }
-    private $sessionName = 'PHPSESSID';
+    
 
     /**
      * Get the value of sessionName
@@ -183,21 +187,29 @@ class Chat implements MessageComponentInterface {
     }
 }
 
-$session = new Handler\NativeFileSessionHandler('C:\\PortableApps\\usbwebserver\\php\\tmp');
-session_start();
+$sessionSavePath = 'C:\\PortableApps\\usbwebserver\\php\\tmp';
+//ini_set('session.save_path', $sessionSavePath);
 
+$sessionHandler = new Handler\NativeFileSessionHandler($sessionSavePath);
+//session_start();
 $chat = new Chat();
 $chat->setSessionName('SIPROSES');
 
+$session = new SessionProvider(
+    new WsServer($chat),
+    $sessionHandler,
+    [
+        'auto_start' => true,
+        'cookie_lifetime' => 0,
+        'gc_maxlifetime' => 1440,
+        'cookie_secure' => false,
+        'cookie_httponly' => true,
+        'cookie_samesite' => 'Lax'
+    ]
+);
+
 $server = IoServer::factory(
-    new HttpServer(
-        new SessionProvider(
-            new WsServer(
-                $chat
-            ),
-            $session
-        )
-    ),
+    new HttpServer($session),
     8080
 );
 
