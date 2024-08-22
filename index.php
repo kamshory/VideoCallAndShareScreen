@@ -1,3 +1,6 @@
+<?php
+session_start()
+?>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -11,6 +14,7 @@
         <video id="localVideo" autoplay playsinline></video>
         <video id="remoteVideo" autoplay playsinline></video>
     </div>
+    <button id="openCamera">Open Camera</button>
     <button id="startCall">Start Call</button>
     <button id="shareScreen">Share Screen</button>
     <script src="script.js"></script>
