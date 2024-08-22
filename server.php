@@ -37,12 +37,6 @@ class Chat implements MessageComponentInterface {
         $this->clients = [];
     }
 
-    /**
-     * Undocumented function
-     *
-     * @param ConnectionInterface $conn
-     * @return void
-     */
     public function onOpen(ConnectionInterface $conn) {
         $request = $conn->httpRequest;
         if (isset($request)) {
@@ -73,7 +67,6 @@ class Chat implements MessageComponentInterface {
     }
 
     public function onClose(ConnectionInterface $conn) {
-        // Menghapus koneksi yang terputus
         unset($this->clients[$conn->resourceId]);
     }
 
