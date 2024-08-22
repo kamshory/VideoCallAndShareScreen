@@ -30,10 +30,9 @@ class Chat implements MessageComponentInterface {
     /**
      * Client list
      *
-     * @var [type]
+     * @var ConnectionInterface[]
      */
     protected $clients;
-    
 
     public function __construct() {
         $this->clients = [];
@@ -47,7 +46,6 @@ class Chat implements MessageComponentInterface {
      */
     public function onOpen(ConnectionInterface $conn) {
         $request = $conn->httpRequest;
-                        
         if (isset($request)) {
             $cookies = $this->getCookies($request->getHeaders());
             $sessions = $this->getSessions($cookies);
@@ -56,7 +54,6 @@ class Chat implements MessageComponentInterface {
             $queryParams = $request->getUri()->getQuery();
             parse_str($queryParams, $params);
         }
-
         $this->clients[$conn->resourceId] = $conn;
     }
 
