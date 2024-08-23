@@ -4,6 +4,7 @@ session_start();
 $_SESSION['websocketChannel'] = 'weiuewiufwef';
 $_SESSION['websocketChannelTarget'] = 'weiuewiufweg';
 ?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
