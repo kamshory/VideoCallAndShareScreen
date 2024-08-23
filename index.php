@@ -65,8 +65,6 @@ $_SESSION['websocketChannelTarget'] = 'weiuewiufweg';
     <div class="toast-wrapper">
         
     </div>
-
-    
 </div>
 </body>
 </html>

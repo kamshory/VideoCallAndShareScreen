@@ -179,7 +179,7 @@ function onReceiveMissedCall()
     $('#incomming-video-call-dialog').modal('hide');
     showToast(
         'Anda melewatkan panggilan video hingga waktu tunggu habis', 
-        'Panggilan Anda Tidak Dijawab', 
+        'Anda Melewatkan Panggilan', 
         'Saat ini juga'
     );
 }
